@@ -1,0 +1,105 @@
+
+Todo:
+		--- check new NaNs in SWI
+		--- deal with y <- '$NaN'.
+		--- sort(colSums(mds_drivers), decreasing=true)  % true not recognised as boolean
+		--- consider returning the numeric '$NaN' rather than the atomic '$NaN' from R to (swi?) Prolog
+		--- define nan/1 & infinity/1 ?
+		--- add  support for infinity- there is already something there but Swi does not deal well with it
+	 	--- just change c(...) vectors to use the standard vectors (ala matrices)
+      --- when encountering an integer in atoms Data, cast it to atom, rather than exception
+      --- fix frames,  Mt <- mtcars.  (segs faults right now)
+		--- test on Yap
+		--- interactions <- sapply(1:ncol(genomic_data), function(i) sapply(1:ncol(genomic_data), function(j) {f<- try(fisher.test(genomic_data[,i], genomic_data[,j]), silent=TRUE); if(class(f)=="try-error") 0 else ifelse(f$estimate>1, -log10(f$p.val),log10(f$p.val))} ))
+
+1:5  2016/1/23 (j_review)
+  New   op( 700, fx, ~ )
+  New   =<  ->  <=
+  Fix   - Expr  was cut too soon in atom conversion term transformation.
+  Fix   new fix of a$b[c] <-d (test atomic rather than compound/3)
+  Fix   a$b[c] <- d    (add example)
+  New   @~@  ->  %in%  (maybe add example)
+  New   R negation, !, operator.
+  New   \=  prolog -> != R
+  New   support for expressions in array indices: hmrn_pass <- hmrn[ hmrn$'Contamination' == "PASS", *]
+
+1:4  2015/5/24 (configurable)
+   Many changes from Samer Abdallah. Particularly supporting threaded deployment for web services.
+
+1:3  2015/5/3 (collaborative)
+   Changed is_rvar/1,2 to r_is_var/1,2.
+	Changed start_r/0 and end_r/0 to r_start/0 and r_end/0 respectively.
+	Changed devoff/0 and devoff_all/0 to r_devoff/0 and r_devoff_all/0.
+	Deleted real_debug/0 and real_nodebug/0.
+	Added   a bit of documentation to intro section and r_citation/2.
+	Added   r_new/1.
+	Added   <<- as a shorthand for r_new(Rvar), Rvar <- Expr with error handling.
+
+	This is probably going to be a quick release, the following is quite interesting 
+	Added  [Rexpr] <- Fun ++ Opts and related r_call(Fun,[rvar(Rexpr)|Opts] ).
+	
+	Added  support for $R_LIB_REAL in r_library, which allows to replace public libs with local source files.
+	Added  r_remove/1 to interface.
+	Updated  arity/3 and compound/3. % not tested on Yap yet
+	Fixed  devoff_all.
+
+1:2:0   2015/1/2  (regardless)
+	Pack real.pl now reads 1.2 rather than 1.2.0. Fixes, (3rd part) are reserved for developement.
+	Further structure added to real.c.
+	Changes to C-interface to modularly & backward-compatibly support SWI-7 endogenous lists.
+	Changed current_prolog_flag(real,none) to real_started(false).
+	Changed prefs:start_r_auto(false) to current_prolog_flag(real_start,false).
+	Added NaN examples.
+   Fixed NaN in beginning of matrices and matrix rows.
+	Silent loading of <- library(Lib) and added ?- r_library(Lib)
+	Added  support for NaN in matrices and vector shifting. ('$NaN' bi- and '' uni-directional (Prolog -> R) ).
+	Support for   x <-  [row(1,2,3),r(4,5,6)].
+   Fixed   x <- list().   on Swi 7.
+	Cushioned Yap use by wrapping thread_self/1 to real_thread_self/1.
+
+1:1:0       2014/02/15    (thankless_task)
+	Added support for threaded execution.
+	We need to look into environments to make deployment easier.
+
+1:0:4       2014/12/25
+	Fixed passing unamed R lists to Prolog pairs. Missing name is the number
+	position. Added example for that.
+
+0:1:2       2013 November 3   (the_stoic)
+   Added support for a[x,y] and a().
+	Corrected some branch variables, thanks to new Swi warnings.
+	Jan, added some stuff on strings support. 
+
+0:1:1       2013 January 17   (cross_compiled)
+	swipl-win.exe doesnot use the std I/O streams. So <-print/1 doesnot display
+	on console. Added message that only displays when Prolog was started with
+	swipl-win.exe and only once. The windows dlls are now cross compiled. 
+	There are now also shared (.so) libs for linux i386 and x86_64.
+	Added Makefile.swi to the sources.
+
+0:1:0       2012 December 26   [oliebollen]
+   First release with updated syntax, documentation and Windows binaries.
+	Reflects state of affairs for the PADL 2013 related publication.
+   Great work by Vitor on passing c() via C and on utf support.
+
+0:0:5       2012 September 12
+   ?fixed?  * in array indicators (tut5) broken (why ?).
+   Moved real_ex.pl to examples/for_real.pl
+   Fixed '  x <- list(.),  x$a <- 3.  '. Added to examples (composite_list).
+   In readme.txt autoconfig -> autoconf.
+   Support $ as term. 
+   Expand the cases understood as printable to include ^ and $.
+   Added r_wait/0.
+
+0:0:4       2012 May 24
+   Fixed translation of P <- (v1-v2)^2, (report: Michiel Hildebrand)
+   Added a (v1-v2)^2 example to real_ex.pl .
+
+0:0:3       2012 Feb ??
+   Complete re-writing of the C-code for SWI interface. (80% done by Jan Wielimeker.)
+   Added examples/pagerank.pl (Vitor Santos Costa).
+
+0:0:2       2011 Dec ??
+0:0:1       2011 Dec ??
+
+   First two releases only shown to Vitor and Jan.

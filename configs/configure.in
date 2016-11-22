@@ -1,0 +1,42 @@
+dnl Process this file with autoconf to produce a configure script.
+
+m4_ifdef([HAS_TOP],[m4_ignore],[   
+AC_INIT(install-sh)
+AC_PREREQ([2.50])
+AC_CONFIG_HEADER(config.h)
+])
+
+AC_SUBST(REAL_INCLUDES)
+AC_SUBST(REAL_LIBS)
+AC_SUBST(REAL_TARGET)
+
+m4_ifdef([HAS_TOP],[m4_ignore],[   m4_include([../ac_swi_c.m4])  ])
+
+AC_CHECK_PROGS(REXE, R, "none")
+if test $REXE = none; then
+  REAL_TARGET="dummy"
+else
+  REAL_TARGET="ritf"
+  REAL_INCLUDES="$($REXE CMD config --cppflags | grep -v ^WARNING)"
+  REAL_LIBS="$($REXE CMD config --ldflags | grep -v ^WARNING)"
+
+  ocppflags="$CPPFLAGS"
+  ocflags="$CFLAGS"
+  CPPFLAGS+=" $REAL_INCLUDES"
+  CFLAGS+=" $REAL_INCLUDES"
+
+  AC_CHECK_HEADERS(Rinterface.h)
+
+  CFLAGS="$ocflags"
+  CPPFLAGS="$ocppflags"
+fi
+
+m4_ifdef([HAS_TOP],[m4_ignore], [AC_OUTPUT(Makefile)])
+
+
+
+
+
+
+
+

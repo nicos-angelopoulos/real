@@ -1,0 +1,18 @@
+SOBJ=	$(PACKSODIR)/real.$(SOEXT)
+CFLAGS+=-std=c99
+
+all:	$(SOBJ)
+   
+$(SOBJ): c/real.o
+	mkdir -p $(PACKSODIR)
+	$(LD) $(LDSOFLAGS) $(SWISOLIB) -o $@ $< @REAL_LIBS@
+
+c/real.o:
+	$(CC) $(CFLAGS) @REAL_INCLUDES@ @REAL_LIBS@ -c -o c/real.o c/real.c
+
+check::
+install::
+clean:
+	rm -f c/real.o
+distclean: clean
+	rm -f $(SOBJ)

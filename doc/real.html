@@ -1,0 +1,570 @@
+<html>
+  <head>
+    <title>real.pl -- An interface to the R statistical software.</title>
+    <link href="pldoc.css" rel="stylesheet" type="text/css">
+    <meta
+	http-equiv="content-type"
+	content="text/html; charset=UTF-8">
+  </head>
+  <body>
+    <div class="navhdr">
+      <div class="jump">
+	<div>
+	  <a class="prolog_version" href="http://www.swi-prolog.org"> SWI-Prolog 7.3.26</a>
+	</div>
+      </div>
+      <div class="search">
+      </div>
+      <br clear="right">
+    </div>
+    <h1 class="file">real: An interface to the R statistical software.</h1>
+    <h2 class="wiki">Introduction</h2>
+    <p>This library enables the communication with an R process started as a shared library.
+Version 1, was the result of the efforts of two research groups that have worked in parallel.
+The syntactic emphasis on a minimalistic interface. Versions between 1.4 and 2.0, also
+work done by others particularly in interfacing to web applications. See credits for more details.</p>
+    <p>In the doc/ directory of the distribution there is user's guide, a published paper
+and html documentation from PlDoc. There is large number of examples in <code>examples/for_real.pl</code>.</p>
+    <p>By default when the library is loaded an R object is started which will serve the
+R commands. If <code>current_prolog_flag(real_start,false)</code> succeeds, the R object is not loaded and the user
+needs to issue <a href="#r_start/0">r_start/0</a> to do that.</p>
+    <p>A single predicate (<a href="#&lt;-/2">&lt;-/2</a>,<a href="#&lt;-/1">&lt;-/1</a>) channels the bulk of the interactions between Prolog and R.
+In addition to using R as a shared library, real uses
+the c-interfaces of SWI/Yap and R to pass objects in both directions.
+The usual mode of operation is to load Prolog values on to R variables and then call
+R functions on these values. The return value of the called function can be either placed
+on R variable or passed back to Prolog. It has been tested extensively on current
+SWI and YAP on Linux machines but it should also compile and work on MS operating systems and Macs.</p>
+    <p>Since v1.1 Real supports threads for web services.
+In this scenario, the R object is served by the main thread. This is compatible
+with the current Prolog servers ran as Unix services although you need a patched version of
+<code class="nofile">http_unix_daemon.pl</code> for this type of demployment (one such file is included in Real sources).
+See <a href="http://stoics.org.uk/~nicos/sware/real/ws.html">http://stoics.org.uk/~nicos/sware/real/ws.html</a>
+and in directory examples/ws_hist</p>
+    <p>Since v1.3 Real supports running an R server in any thread, not just the main thread.
+The library now has the concept of a designated R server thread. By default, there is
+no designated server thread, and the evaluation/execution of R expressions/commands
+is done in the calling thread. This should be done in a single threaded way. A designated
+server thread can come into existence in one of three ways:</p>
+    <ol>
+      <li>By starting a dedicated server thread using <a href="#r_start_server/0">r_start_server/0</a>.</li>
+      <li>By running <span class="undef">r_thread_loop/1</span> in any thread. This will run until a message to quit
+the thread is received by executing <code>r(r_thread_loop_stop)</code> or &lt;- r_thread_loop_stop
+in any thread.</li>
+      <li>By running any goal G as <code>r_call_as_server(G)</code>. While G is running, the thread that
+it is running in becomes the designated server thread, and G should call <a href="#r_serve/0">r_serve/0</a>
+periodically to answer any R requests that accumulate.
+While there is a designated server thread, a call to <a href="#r/1">r/1</a>, <a href="#r/2">r/2</a>, (&lt;-)/1 or (&lt;-)/2 in any
+thread results in the request being posted to the server thread and the current thread
+blocking until a reply is received.</li>
+    </ol>
+    <p>The main modes for utilising the interface are</p>
+    <pre class="code" ext="">     &lt;- +Rexpr
+     &lt;- +Rvar</pre>
+    <pre class="code">Print  Rvar or evaluate expression Rexpr in R</pre>
+    <pre class="code" ext="">     +Rvar   &lt;- +PLdata
+     +Rexpr  &lt;- +PLdata
+     -PLvar  &lt;- +Rvar
+     -PLvar  &lt;- +Rexpr
+     +Rexpr1 &lt;- +Rexpr2</pre>
+    <p>Pass Prolog data to R, pass R data to Prolog or assign an R expression to
+an assignable R expression.</p>
+    <h2 class="wiki">Testing</h2>
+    <p>There is a raft of examples packed in a sinlge file that test the library.</p>
+    <pre class="code" ext="">     ?- [pack(real/examples/for_real)].
+
+     ?- for_real.
+
+     ?- edit( pack(real/examples/for_real) ).</pre>
+    <h2 class="wiki">Syntax</h2>
+    <p>There are syntactic conventions in R that make unparsable prolog code.
+Notably function and variable names are allowed to contain dots, square brackets are used
+to access parts of vectors and arrays and functions are allowed empty argument tuples.
+We have introduced relevant syntax which allows for easy transition between prolog and R.
+Prolog constructs are converted by the library as follows:</p>
+    <ul>
+      <li><code>..</code> within atoms -&gt; <code>.</code> (ex. <code> as..integer(c(1,2,3)) -&gt; as.integer(c(1,2,3))</code> )</li>
+      <li><code>^[]</code> after atoms -&gt; <code>[]</code> (ex. <code>a^[2] -&gt; a[2] </code>)</li>
+      <li><code>(.)</code> at the end of atoms that are known R functions -&gt; <code>()</code> (ex. <code>dev..off(.) -&gt; dev.off()</code> )</li>
+      <li><code>[]</code> -&gt; <code>c()</code> (which equal to R's NULL value)</li>
+      <li>( <code>f(x)</code> :- (..)) -&gt; <code>f(x)</code> (...)</li>
+      <li>Lists of lists are converted to matrices. All first level lists must have the same length.</li>
+      <li>Filenames must be given as Prolog strings.</li>
+      <li>R specific operators (eg. %*% should be quoted in Prolog.</li>
+      <li>+ prepends strings, both for (Prolog) codes and atoms: +"String" and +'String'</li>
+      <li>If you want to ensure that you do not quote a string, use -"String".</li>
+      <li>Expressions that pose difficulty in translation can always be passed as unquoted Prolog atoms or strings.</li>
+      <li>since 0:1:2 <code>foo()</code> is valid syntax: <code>&lt;- dev..off() </code> works now (with no need for dev..<code>off(.)</code>)</li>
+      <li>since 0:1:2 mat[1] is valid syntax: <code>m[1] &lt;- 4</code> works now (with no need for m^[...])</li>
+    </ul>
+    <h2 class="wiki">Data transfers</h2>
+    <p>R vectors are mapped to prolog lists and matrices are mapped to nested lists.
+The convention works the other way around too.</p>
+    <p>There are two ways to pass prolog data to R. The more efficient one is by using</p>
+    <pre class="code" ext=""> Rvar &lt;- PLdata</pre>
+    <p>Where Pldata is one of the basic data types (number,boolean) a list or a c/n term.
+This transfers via C data between R and Prolog. In what follows atomic PLval data
+are simply considered as singleton lists.
+Flat Pldata lists are translated to R vectors and lists of one level of nesting to R matrices
+(which are 2 dimensional arrays in R parlance). The type of values of the vector or matrice is
+taken to be the type of the first data element of the Pldata according to the following :</p>
+    <ul>
+      <li>integer -&gt; integer</li>
+      <li>float -&gt; double</li>
+      <li>atom -&gt; char</li>
+      <li>boolean -&gt; logical</li>
+    </ul>
+    <p>Booleans are represented in prolog as true/false atoms.
+Currently arrays of aribtrary dimensions are not supported in the low-level interface.
+Note that in R a scalar is just a one element vector. When passing non-scalars the
+interface will assume the type of the object is that of the first scalar until it encounters
+something different.
+Real will currently re-start and repopulate partial integers for floats as illustrated
+below:</p>
+    <pre class="code" ext="">r &lt;- [1,2,3].         % pass 1,2,3 to an R vector r
+R &lt;- r.               % pass contents of R vector r to Prolog variable R
+R = [1, 2, 3].
+
+i &lt;- [1,2,3.1].       % r is now a vector of floats, rather than integers
+I &lt;- i.
+I = [1.0, 2.0, 3.1].
+</pre>
+    <p>However, not all possible "corrections" are currently supported. For instance,</p>
+    <pre class="code" ext="">?- c &lt;- [a,b,c,1].
+ERROR: real:set_r_variable/2: Type error: `boolean' expected, found `a'</pre>
+    <p>In the data passing mode we map Prolog atoms to R strings-</p>
+    <pre class="code" ext="">?- x &lt;- [abc,def].
+true.
+
+?- &lt;- x.
+[1] "abc" "def"
+true.
+
+?- X &lt;- x.
+X = [abc, def].</pre>
+    <p>In addition, Prolog data can be passed through the expression mechanism.
+That is, data appearing in an arbitrary R expression will be parsed and be part of the long
+string that will be passed from Prolog to R for evaluation.
+This is only advisable for short data structures. For instance,</p>
+    <pre class="code" ext="">tut_4a :-
+    state &lt;- c(+"tas", +"sa",  +"qld", +"nsw", +"nsw"),
+    &lt;- state.
+
+tut_4b :-
+    state &lt;- c(+tas, +sa,  +qld, +nsw, +nsw),
+    &lt;- state.</pre>
+    <p>Through this interface it is more convenient to be explicit about R chars by Prolog prepending
+atoms or codes with + as in the above example.</p>
+    <p>The Prolog atoms '$NaN' and '' are passed to NA values in R. '$NaN' is the bidirectional value,
+'' is only understood in the Prolog -&gt; R direction as it is useful for passing missing values
+from CSV read matrices.</p>
+    <pre class="code" ext="">nan_ex :-
+    x &lt;- [c(1,2,''),c(3,4,'$NaN')],
+    X &lt;- x,
+    write( x(X) ), nl.
+
+?- nan_ex.
+x( [[1, 2, '$NaN'], [3, 4, '$NaN']] )</pre>
+    <h2 class="wiki">Other predicates</h2>
+    <p>Use <a href="#r_citation/2">r_citation/2</a> to access publication information about the interface.
+Although the original name was R..eal, when citating please use Real as
+the name for this library.</p>
+    <p>The library listens to</p>
+    <pre class="code" ext="">?- debug(real).
+?- nodebug(real).</pre>
+    <p>Predicate <a href="#&lt;&lt;-/2">&lt;&lt;-/2</a> is a shorthand that ensures that the R variable on the left is
+fresh/new at the time of call, and <a href="#&lt;&lt;-/1">&lt;&lt;-/1</a> blanks R variable out (<a href="#r_remove/1">r_remove/1</a>).</p>
+    <h2 class="wiki">Examples</h2>
+    <pre class="code" ext="">
+?- e &lt;- numeric(.).
+yes
+?- e^[3] &lt;- 17.
+yes
+?- e[3] &lt;- 17.
+yes
+?- Z &lt;- e.
+Z = ['$NaN','$NaN',17.0]
+?- e^[10] &lt;- 12.
+yes
+?- Z &lt;- e.
+Z = ['$NaN','$NaN',17.0,'$NaN','$NaN','$NaN','$NaN','$NaN','$NaN',12.0]
+
+rtest :-
+     y &lt;- rnorm(50),               % get 50 random samples from normal distribution
+     &lt;- y,                         % print the values via R
+     x &lt;- rnorm(y),                % get an equal number of normal samples
+     &lt;- x11(width=5,height=3.5),   % create a plotting window
+     &lt;- plot(x,y)                  % plot the two samples
+     r_wait,                       % wait for user to hit Enter
+     % &lt;- dev..off(.).             % old syntax, still supported
+     &lt;- dev..off().                % close the plotting window. foo() now acceptable in supported Prologs
+
+tut6 :-
+     d &lt;- outer(0:9, 0:9),
+     fr &lt;- table(outer(d, d, "-")),
+     &lt;- plot(as..numeric(names(fr)), fr, type="h", xlab="Determinant", ylab="Frequency").
+
+tut4b :-
+     state &lt;- [tas,sa,qld,nsw,nsw,nt,wa],
+     statef &lt;- factor(state),
+     incmeans &lt;- tapply( c(60, 49, 40, 61, 64, 60, 59), statef, mean ),
+     &lt;- incmeans.
+
+logical :-
+     t &lt;- [1,2,3,4,5,1],
+     s &lt;- t==1,
+     &lt;- s,
+     S &lt;- s,
+     write( s(S) ), nl.</pre>
+    <h2 class="wiki">Info</h2>
+    <dl class="tags">
+      <dt class="keyword-author">author</dt>
+      <dd class="keyword-author">- Nicos Angelopoulos</dd>
+      <dd class="keyword-author">- Vitor Santos Costa</dd>
+      <dt class="keyword-version">version</dt>
+      <dd class="keyword-version">- 2:0:0, 2016/5/24, ijar_paper</dd>
+      <dt class="keyword-see">See also</dt>
+      <dd class="keyword-see">- <a href="http://stoics.org.uk/~nicos/sware/real">http://stoics.org.uk/~nicos/sware/real</a></dd>
+      <dd class="keyword-see">- <a
+	  class="file"
+	  href="../../../../usr/local/users/nicos/local/git/lib/swipl-7.3.26/pack/real/examples/for_real.pl">pack(real/examples/for_real)</a></dd>
+      <dd class="keyword-see">- <a
+	  class="file"
+	  href="../../../../usr/local/users/nicos/local/git/lib/swipl-7.3.26/pack/real/doc/real.html">pack(real/doc/real.html)</a></dd>
+      <dd class="keyword-see">- <a
+	  class="file"
+	  href="../../../../usr/local/users/nicos/local/git/lib/swipl-7.3.26/pack/real/doc/guide.pdf">pack(real/doc/guide.pdf)</a></dd>
+      <dd class="keyword-see">- <code>pack(real/doc/padl2013-real.pdf)</code></dd>
+      <dd class="keyword-see">- <a href="http://www.r-project.org/">http://www.r-project.org/</a></dd>
+      <dt class="keyword-license">license</dt>
+      <dd class="keyword-license">- GPL 2, or Artistic 2.0</dd>
+    </dl>
+    <dl>
+      <dt class="pubdef"><span style="float:right"></span><a name="r_start/0">
+	<b class="pred">r_start</b>
+      </a> is <b class="det">det</b></dt>
+      <dd class="defbody">Start an R object. This is done automatically upon loading the library,
+except if <code>current_prolog_flag( real_start, false)</code> succeeds.
+Only 1 instance should be started per Prolog session.
+Calls to the predicate when the R object is loaded and connected to succeed
+silently but have no useful side-effects.</dd>
+      <dt class="pubdef"><span style="float:right"></span><a name="r_started/1">
+	<b class="pred">r_started</b>
+	<var class="arglist">(-F:boolean)</var>
+      </a> is <b class="det">det</b></dt>
+      <dd class="defbody">Unifies <var>F</var> with true if R has been started or false if not.</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="&lt;-/1">
+	  <b class="pred">&lt;-</b>
+	  <var class="arglist">(+Rvar)</var>
+	</a>
+      </dt>
+      <dt class="pubdef">
+	<b class="pred">&lt;-</b>
+	<var class="arglist">(+Rexpr)</var>
+      </dt>
+      <dd class="defbody">If <var>Rvar</var> is an atom and a known R object, then print <var>Rvar</var> on R.
+Else treat the input as an R expression and pass it on R for interpretation.
+(Throws result away, if expression is not a &lt;- expression itself).</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="&lt;-/2">
+	  <b class="pred">&lt;-</b>
+	  <var class="arglist">(+Rexpr, +PLdata)</var>
+	</a>
+      </dt>
+      <dt class="pubdef">
+	<b class="pred">&lt;-</b>
+	<var class="arglist">(-PLvar, +Rexpr)</var>
+      </dt>
+      <dt class="pubdef">
+	<b class="pred">&lt;-</b>
+	<var class="arglist">(+Rexpr1, +Rexpr2)</var>
+      </dt>
+      <dd class="defbody">Pass Prolog data <var>PLdata</var> to Rvar. <var>PLdata</var> is a term that is one of:
+an atomic value, flat list or list of depth 2. This mode uses the C-interface to pass
+the value to an R variable.
+
+<p>Pass <var>PLdata</var> to an assignable R expression.</p>
+
+<p>Pass Rvar to <var>PLvar</var> variable via the C-interface.</p>
+
+<p>Evaluate <var>Rexpr</var> and store its return value to <var>PLvar</var>.</p>
+
+<p>Pass <var>Rexpr1</var> &lt;- <var>Rexpr2</var> to R.</p>
+
+<p>Note that all <var>Rexpr</var>* are first processed as described in the section about syntax before passed to R.
+Real also looks into Rexpressions and passes embeded lists to hidden R variables in order
+to pass large data efficiently.</p>
+
+<p>c/n terms are recognised as <var>PLdata</var>
+if and only if they contain basic data items in all their arguments that can be
+cast to a single data type. This builds on the <code>c()</code> function of R that is a basic
+data constructor. Currently c/n terms are not recognised within nested expressions.
+But a mechanism similar to the hidden variables for Prolog lists in expressions should
+be easy to implement.</p></dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="&lt;&lt;-/1">
+	  <b class="pred">&lt;&lt;-</b>
+	  <var class="arglist">(Rvar)</var>
+	</a>
+      </dt>
+      <dd class="defbody">Nick name for <code>r_remove( Rvar )</code>.
+
+<p>See <a href="#r_remove/1">r_remove/1</a>.</p></dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="&lt;&lt;-/2">
+	  <b class="pred">&lt;&lt;-</b>
+	  <var class="arglist">(+Rv, +Expr)</var>
+	</a>
+      </dt>
+      <dd class="defbody">True iff <var>Rv</var> is a undefined R variable and <var>Rv</var> &lt;- <var>Expr</var> succeeds.
+If <var>Rv</var> is not an atom or if its an atom that corresponds to an R variable the predicate errors.
+
+<p>See <a href="#r_new/1">r_new/1</a> for a predicate that fails instead in a similar context.</p>
+
+<pre class="code" ext=""> ?- x &lt;&lt;- [1,2,3].
+ true.
+
+ ?- x &lt;&lt;- [1,2,3].
+ ERROR: First argument of &lt;&lt;- exists as R variable: x.</pre>
+</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r/1">
+	  <b class="pred">r</b>
+	  <var class="arglist">(R)</var>
+	</a>
+      </dt>
+      <dd class="defbody">Nickname for &lt;-(<var>R</var>).</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r/2">
+	  <b class="pred">r</b>
+	  <var class="arglist">(?L, +R)</var>
+	</a>
+      </dt>
+      <dd class="defbody">Nickname for &lt;-(<var>L</var>,<var>R</var>).</dd>
+      <dt class="pubdef"><span style="float:right"></span><a name="r_thread_loop/0">
+	<b class="pred">r_thread_loop</b>
+      </a> is <b class="det">det</b></dt>
+      <dd class="defbody">Starts a loop that serves R calls received from
+<a href="#&lt;-/1">&lt;-/1</a> and <a href="#&lt;-/2">&lt;-/2</a> calls from other threads.
+It can be run on any thread as long as no other thread is
+running an R serving thread. If there is, an exception is thrown.
+To stop it, query from any thread in the pool:
+
+<pre class="code" ext="">   &lt;- r_thread_loop_stop.</pre>
+</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_serve/0">
+	  <b class="pred">r_serve</b>
+	</a>
+      </dt>
+      <dd class="defbody">Serves any R calls that are waiting on the thread queue.
+The queue is populated by calls to <a href="#&lt;-/1">&lt;-/1</a> and <a href="#&lt;-/2">&lt;-/2</a> that are called
+on other threads. The predicate succeeds if there are no calls
+in the queue.
+
+<p>This predicate <b>must</b> be called in the context of <a href="#r_call_as_server/1">r_call_as_server/1</a>;
+this is required to ensure that the current thread is designated as
+an R server thread, so that R evaluations from other threads are
+properly redirected to this thread.</p>
+
+<dl class="tags">
+	<dt class="keyword-throws">throws</dt>
+	<dd class="keyword-throws">- <code>real_error(no_server_thread)</code> if no thread has been designated a server thread.</dd>
+	<dd class="keyword-throws">- real_error(<code>thread_server_mismatch(T1,T2)</code> if <a href="#r_serve/0">r_serve/0</a> is called on thread T1 but the designated server thread is T2.</dd>
+      </dl>
+</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_is_var/1">
+	  <b class="pred">r_is_var</b>
+	  <var class="arglist">(+Rvar)</var>
+	</a>
+      </dt>
+      <dd class="defbody">True if <var>Rvar</var> is an atom and a known variable in the R environment.</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_is_var/2">
+	  <b class="pred">r_is_var</b>
+	  <var class="arglist">(+Rvar, -RvarAtom)</var>
+	</a>
+      </dt>
+      <dd class="defbody">True if <var>Rvar</var> is a term and a known variable in the R environment.
+<var>RvarAtom</var> is the atomic representation of the <var>Rvar</var> term.</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_char/2">
+	  <b class="pred">r_char</b>
+	  <var class="arglist">(+Atomic, +RcharAtom)</var>
+	</a>
+      </dt>
+      <dd class="defbody">Wrap an atomic value with double quotes so it can pass as an R char type.
+This is more or less obsolete. You can use +<var>Atomic</var> directly in R expressions.</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_devoff/0">
+	  <b class="pred">r_devoff</b>
+	</a>
+      </dt>
+      <dd class="defbody">Close the current plot devise without any reporting. Short for &lt;- invisible('dev.off'()').</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_devoff_all/0">
+	  <b class="pred">r_devoff_all</b>
+	</a>
+      </dt>
+      <dd class="defbody">Close all open devices.</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_wait/0">
+	  <b class="pred">r_wait</b>
+	</a>
+      </dt>
+      <dd class="defbody">Currently only waiting for Return to be pressed.</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_library/1">
+	  <b class="pred">r_library</b>
+	  <var class="arglist">(+Rlib)</var>
+	</a>
+      </dt>
+      <dd class="defbody">Load <var>Rlib</var> while respecting <a
+	  href="../../../../usr/local/users/nicos/local/git/lib/swipl-7.3.26/library/quintus.pl#prolog_flag/2">prolog_flag/2</a> real_suppress_lib_messages.
+
+<p>By default and when the flag is not defined messages are suppressed
+by wrapping the call to R's <code>suppressPackageStartupMessages()</code>.</p>
+
+<p>If you want the messages, use</p>
+
+<pre class="code" ext=""> ?- set_prolog_flag( real_suppress_lib_messages, false ).</pre>
+
+<p>The predicate first looks into all subdirs of R_LIB_REAL
+for <var>Rlib</var>, <var>Rlib</var>.r and <var>Rlib</var>.R which allows to use local implementations
+rather than library packages. This is useful if you have made changes
+to a publically available R package that has a single file entry point.
+You can then use the local version for your purposes but allow others
+to also use your Real code with the puablic R function without any changes
+to the interface calls. The usual scenario is that the local version
+has a couple of extra arguments that specialises usage. Interface predicates
+to the R package can happily thus work with either version.</p>
+
+<p>For instance, assume file '/home/user/r/lib/pheatmap.r' is a local file
+that can be independently sourced and corrensponds to the main function file
+of R's package pheatmap. Then the following code will source the local copy
+rather than look for the package installed via R.</p>
+
+<pre class="code" ext=""> ?- setenv( 'R_LIB_REAL', '/home/user/r/lib' ), debug(real), r_library(pheamap).
+ % Sending to R: source("/home/nicos/islp/r/lib/pheatmap.R")</pre>
+
+<p>If you want to use locally installed packages include their
+root location to R_LIB_USER (as per R documentation).</p>
+
+<p>Examples:</p>
+
+<pre class="code" ext="">  ?- r_library( ggplot2 ).
+  ?- r_library( "ggplot2" ).
+  ?- r_library( [ggplot2,goProfiles] ).
+  ?- debug( real ).
+  ?- &lt;- library("ggplot2").
+  % Sending to R: suppressPackageStartupMessages(library(ggplot2))
+  ?- set_prolog_flag( real_suppress_lib_messages, false ).
+  ?- &lt;- library("ggplot2").
+  % Sending to R: library(ggplot2)</pre>
+
+<p>&lt;- <code>library(Rlib)</code> also re-directs here. These are the best ways
+to include R libraries from within Real. <var>Rlib</var> is allowed to be atomic or
+a string, or a list of atoms each corresponding to an R library name.</p></dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_version/3">
+	  <b class="pred">r_version</b>
+	  <var class="arglist">(-Version, -Date, -Note)</var>
+	</a>
+      </dt>
+      <dd class="defbody"><var>Version</var> and release <var>Date</var> (<code>data(Y,M,D)</code> term). <var>Note</var> is either a note or nickname
+for the release. In git development sources this is set to &lt;Something&gt;_dev.</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_citation/2">
+	  <b class="pred">r_citation</b>
+	  <var class="arglist">(-Atom, -Bibterm)</var>
+	</a>
+      </dt>
+      <dd class="defbody">Although the original name was R..eal, when citating please use Real as the name for this library.
+
+<p>This predicate ucceeds once for each publication related to this library.
+<var>Atom</var> is the atom representation % suitable for printing while <var>Bibterm</var>
+is a <code>bibtex(Type,Key,Pairs)</code> term of the same publication.
+Produces all related publications on backtracking.</p></dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_remove/1">
+	  <b class="pred">r_remove</b>
+	  <var class="arglist">(Rvar)</var>
+	</a>
+      </dt>
+      <dd class="defbody">Remove <var>Rvar</var> from R's workspace (&lt;- <code>remove(Rvar)</code>).</dd>
+      <dt class="pubdef">
+	<span style="float:right"></span>
+	<a name="r_call/2">
+	  <b class="pred">r_call</b>
+	  <var class="arglist">(+Fun, +Opts)</var>
+	</a>
+      </dt>
+      <dd class="defbody">Construct and possibly call an R function.
+<var>Fun</var> can be an atom or a compound, eg plot, or <code>plot(width=3)</code>.
+The predicate also supports multiple output destinations.
+
+<p><var>Opts</var> a single or list of the following:</p>
+<ul>
+	<li>Ropt=Rarg <a class="builtin" href="/man?predicate=%3D/2">=/2</a> terms in <var>Opts</var> are added to the function call</li>
+	<li><code>call(Call=true)</code> whether to call the constructed function</li>
+	<li><code>debug(Dbg=false)</code> turn on <code>debug(real)</code> and restore at end of call</li>
+	<li><code>fcall(Fcall)</code> returns the constructed Fcall</li>
+	<li><code>outputs(Outs=false)</code> a single or list of [false,x11,pdf] also terms of those (eg <code>x11(width=7)</code>)</li>
+	<li><code>post_call(Post)</code> call this after the function call. this can be an arbitrary callable including another <a href="#&lt;-/2">&lt;-/2</a> or <a href="#r_call/2">r_call/2</a></li>
+	<li><code>rmv(Rmv=false)</code> when Rvar is given, should it be removed from R workspace at end? (see <a href="#r_remove/1">r_remove/1</a>)</li>
+	<li><code>rvar(Rvar)</code> when given call is expanded to Rvar &lt;- Fcall, else &lt;- Fcall is called</li>
+	<li><code>stem(Stem=real_plot)</code> stem to use for output files
+Only the first Ropt=Rarg for each matching Ropt is used. This is also the case
+for =pairs in args of Func. These are pre-pended for the check, so they always have
+precedence.</li>
+      </ul>
+
+<pre class="code" ext=""> ?- r_call( plot([1,2,3]), [debug(true)]  ).
+ ?- &lt;- plot(c(1,2,3)) ++ debug(true).
+ ?- &lt;- plot(c(1,2,3)) ++ xlab=+an_xlab</pre>
+</dd>
+    </dl>
+    <h2 class="undoc">Undocumented predicates</h2>
+    <p>The following predicates are exported, but not or incorrectly documented.</p>
+    <dl class="undoc">
+      <dt class="undoc">
+	<span style="float:right"></span>
+	<a name="r_end/0">
+	  <b class="pred">r_end</b>
+	</a>
+      </dt>
+      <dt class="undoc">
+	<span style="float:right"></span>
+	<a name="r_start_server/0">
+	  <b class="pred">r_start_server</b>
+	</a>
+      </dt>
+      <dt class="undoc">
+	<span style="float:right"></span>
+	<a name="r_call_as_server/1">
+	  <b class="pred">r_call_as_server</b>
+	  <var class="arglist">(Arg1)</var>
+	</a>
+      </dt>
+    </dl>
+  </body>
+</html>
