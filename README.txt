@@ -1,5 +1,5 @@
 
-Real 1.5
+Real 2.0
 ---
 
 Real is a c-based interface for connecting R to Prolog. 
@@ -12,7 +12,7 @@ As of version 1.1 there is support for using Real on SWI web-servers.
 
 Licence
 ---
-This software can be distributed as GPL or Aristic 2.0, see prolog/real.pl.
+This software can be distributed under the MIT licence (see prolog/real.pl).
 
 INSTALL
 ---
@@ -34,7 +34,7 @@ Git access
 
 To get the latest git version goto 
 
-   git clone git://www.swi-prolog.org/home/pl/git/packages/real.git
+   git clone https://github.com/nicos-angelopoulos/real
 
 To install developmental versions do:
 
@@ -43,15 +43,9 @@ To install developmental versions do:
  Install last stable real with 
  ?- pack_install( real ).
  
- do 
+ replace the pack/real directory with the clone from git repository and do
+
  ?- pack_rebuild( real ).  % to force SWI to build from sources.
-
- And then replace c/real.c, prolog/real.pl and examples/for_real.pl 
- in the stable installation by the development version.
-
- and do again:
-
- ?- pack_rebuild( real ).
 
  SWI-Prolog (b)
    clone real into pl-devel/packages/real
@@ -77,12 +71,13 @@ Test
    ?- for_real.
 
 
----
-Nicos Angelopoulos and Vitor Santos Costa
-December, 2012.
+Thanks, 
+Samer Abdallah, for web support improvements.
 
-Updates: Nicos Angelopoulos
-Dec, 2013
-Mar, 2014
-May, 2015
-Jan, 2016
+Jan Wielemaker, for dots in identifiers (without flags) and web-support.
+
+---
+Nicos Angelopoulos 
+2013-2016
+
+Version 1.0- with Vitor Santos Costa: December, 2012.
