@@ -4,8 +4,8 @@ Real 2.0
 
 Real is a c-based interface for connecting R to Prolog. 
 See the documentation at doc/html/real.html for more information.
-There is also a paper doc/padl2013-real.pdf and a user's guide
-doc/guide.pdf, but they both refer to earlier versions of Real.
+There is also a paper [1] and a user's guide in doc/guide.pdf, 
+but they both refer to earlier versions of Real.
 
 Real works on current versions of SWI and YAP.
 As of version 1.1 there is support for using Real on SWI web-servers.
@@ -74,10 +74,28 @@ Test
 Thanks, 
 Samer Abdallah, for web support improvements.
 
-Jan Wielemaker, for dots in identifiers (without flags) and web-support.
+Jan Wielemaker, for reimplenting the C-interface of the prototype for v1.0,
+for dots in identifiers (without flags) and web-support.
+
+
+Primary reference:
+[1] 
+
+Advances in integrative statistics for logic programming
+Nicos Angelopoulos, Samer Abdallah and Georgios Giamas
+International Journal of Approximate Reasoning, (IJAR)
+Volume 78, November 2016, pages 103-115.
+http://dx.doi.org/10.1016/j.ijar.2016.06.008
+
+[2]
+Integrative functional statistics in logic programming
+Nicos Angelopoulos, Vitor Costa Santos, Joao Azevedo, Jan Wielemaker, Rui Camacho and  Lodewyk Wessels
+In Practical Aspects of Declarative Languages (PADL'13)
+January, 2013. Rome, Italy.
+http://stoics.org.uk/~nicos/pbs/padl2013-real.pdf
 
 ---
 Nicos Angelopoulos 
-2013-2016
+2013-2017
 
 Version 1.0- with Vitor Santos Costa: December, 2012.
