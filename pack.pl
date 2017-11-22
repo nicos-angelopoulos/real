@@ -1,5 +1,5 @@
 name(real).
-version('2.0').
+version('2.1').
 title('Integrative statistics with R').
 keywords([statistics,'R',bioinformatics,'machine learning']).
 author( 'Nicos Angelopoulos', 'http://stoics.org.uk/~nicos' ).

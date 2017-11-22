@@ -37,7 +37,7 @@ static int put_sexp(term_t t, SEXP s);
 static int NaN_value(term_t t);
 static int matrix_type(term_t t);
 static int vector_type(term_t t);
-static void bindRIO(void);
+// static void bindRIO(void);  // Nicos: 17.11.22 bindRIO() disabled
 
 static size_t
 list_length(term_t list)
@@ -1053,7 +1053,7 @@ init_R(void)
 #endif
   Rf_initEmbeddedR(argc, argv);
   R_CStackLimit = (uintptr_t)-1; // SA 2015-03 added to disable stack checking
-  bindRIO();
+  // bindRIO();  // Nicos: 17.11.22  bindRIO() disabled
 
   return TRUE;
 }
@@ -1096,11 +1096,16 @@ process_expression(const char * expression)
      }
 
   /* FIXME: Check status (nicos: it seems to be always 1 though? */
-  val = R_tryEval(VECTOR_ELT(e, 0), R_GlobalEnv, &hadError);
-  UNPROTECT(2);
+  // nicos: 17.11.22 added PROTECT aourd this:
+  PROTECT( val = R_tryEval(VECTOR_ELT(e, 0), R_GlobalEnv, &hadError) );
 
   if ( !hadError )
-    return val;
+    {
+      UNPROTECT(3);
+      return val;
+    }
+
+  UNPROTECT(3);
   return NULL;
 }
 
@@ -1313,12 +1318,14 @@ See http://www.math.ncu.edu.tw/~chenwc/R_note/reference/package/R-exts.pdf
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#ifdef RINTERFACE_H_			/* Rinterface.h is loaded */
+/* Nicos: 17.11.22, bindRIO() is currently disabled, on my linux it mangles
+                              library names when loading libraries
+#ifdef RINTERFACE_H_			// Rinterface.h is loaded
 
-/* FIXME: What encoding does the console message have? */
+// FIXME: What encoding does the console message have?
 
 static void
-showMessage(const char *s)		/* FIXME: call printMessage? */
+showMessage(const char *s)		// FIXME: call printMessage?
 { for(; *s; s++)
     Sputcode(*s&0xff, Suser_error);
 }
@@ -1342,7 +1349,7 @@ writeConsoleEx(const char *buf, int buflen, int otype)
 
 static void
 flushConsole(void)
-{ Sflush(Scurrent_output);		/* error is not buffered */
+{ Sflush(Scurrent_output);		// error is not buffered
 }
 
 static void
@@ -1364,9 +1371,10 @@ bindRIO(void)
   R_Consolefile = NULL;
 }
 
-#else /*RINTERFACE_H_*/
+#else //RINTERFACE_H_
 static void bindRIO(void) {}
 #endif
+*/
 
 
 		 /*******************************
