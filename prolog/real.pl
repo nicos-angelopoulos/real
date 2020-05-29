@@ -343,7 +343,7 @@ logical :-
 
 @author     Nicos Angelopoulos
 @author     Vitor Santos Costa
-@version    2:0:0, 2016/9/5, ijar
+@version    2:1:0, 2020/5/29, swi8_2
 @license    MIT
 @see        http://stoics.org.uk/~nicos/sware/real
 @see        ?- pack(real/examples/for_real), for_real
@@ -1009,7 +1009,8 @@ r_library_codes( Rlib, Pre, Post, Rcodes ) :-
 % Version and release Date (data(Y,M,D) term). Note is either a note or nickname
 % for the release. In git development sources this is set to <Something>_dev.
 %
-r_version( 2:0:0, date(2016,9,5), ijar ).
+r_version( 2:1:0, date(2020,5,29), swi8_2 ).
+     % 2:0:0, 2016/9/5, ijar
      % 1:5:0, 2016/1/23, j_review
      % 1:4:0, 2015/5/24, configurable
 	% 1:3:0, 2015/5/3,  collaborative
