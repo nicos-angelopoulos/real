@@ -1206,9 +1206,6 @@ r_send( R ) :-
      debug( real, 'Sending to R: ~s', [Rcodes] ),
      send_r_command( Rcodes ).
 
-rexpr_codes( Rterm, RTmps, Rcodes ) :-
-     rexpr_codes( Rterm, RTmps, Rcodes, [] ).
-
 assignment(PlDataIn, Rvar) :-
      % atom( Rvar ),
      rvar_identifier( Rvar, Rvar, _ ),
@@ -1279,15 +1276,11 @@ rvar_identifier_1( A@B, Rv, C ) :-
      atomic_list_concat( [Aatom,'@',Batom], C ).
 rvar_identifier_1( []([[B]],A), Rv, C ) :-
      rvar_identifier_1( A, Rv, Aatom ),
-     % rexpr_codes(B, [], BCs, [] ),
      rexpr( B, [], Batom ),
-     % atom_codes( Batom, BCs ),
      atomic_list_concat( [Aatom,'[[',Batom,']]'], C ).
 rvar_identifier_1( A^[[B]], Rv, C ) :-
      rvar_identifier_1( A, Rv, Aatom ),
-     % rexpr_codes(B, [], BCs, [] ),
      rexpr( B, [], Batom ),
-     % atom_codes( Batom, BCs ),
      atomic_list_concat( [Aatom,'[[',Batom,']]'], C ).
 rvar_identifier_1( [](B,A), A, C ) :-
      rindices( B, Batom ),
@@ -1299,7 +1292,7 @@ rvar_identifier_1( A^B, A, C ) :-
 	rindices( B, Batom ),
      atom_concat( A, Batom, C ).
 
-/** rexpr_codes(V,_,_).
+/** rexpr(V,_,_).
 
      Generate (or parse) an R expression as codes from/to a Prolog term.
 */
