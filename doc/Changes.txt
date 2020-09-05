@@ -12,6 +12,9 @@ Todo:
 		--- test on Yap
 		--- interactions <- sapply(1:ncol(genomic_data), function(i) sapply(1:ncol(genomic_data), function(j) {f<- try(fisher.test(genomic_data[,i], genomic_data[,j]), silent=TRUE); if(class(f)=="try-error") 0 else ifelse(f$estimate>1, -log10(f$p.val),log10(f$p.val))} ))
 
+2:2
+     2020/09/05    explicit loading of library(apply)
+
 2:1       @ 20.05.29
      2020/5/29    recompiled for SWI-Prolog 8.2.0
      2017/11/22   disabled bindRIO() on my work linux this mangles names of packages
