@@ -2256,9 +2256,9 @@ fi
 if test $PL = "none"; then
    as_fn_error $? "\"Cannot find SWI-Prolog. SWI-Prolog must be installed first\"" "$LINENO" 5
 else
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking \"Running $PL -dump-runtime-variables\"..." >&5
-$as_echo "$as_me: checking \"Running $PL -dump-runtime-variables\"..." >&6;}
-   eval `$PL -dump-runtime-variables`
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking \"Running $PL --dump-runtime-variables\"..." >&5
+$as_echo "$as_me: checking \"Running $PL --dump-runtime-variables\"..." >&6;}
+   eval `$PL --dump-runtime-variables`
 fi
 PLINCL=$PLBASE/include
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"		PLBASE=$PLBASE\"" >&5

@@ -321,7 +321,7 @@ char_vector_sexp(term_t t, size_t len, SEXP *ansP)
 static int
 term_length(term_t t)
 {
-  int ans = 0;
+  size_t ans = 0;
   term_t tname;
   int objtype;
   objtype = REAL_term_type(t);
@@ -349,7 +349,7 @@ term_length(term_t t)
 // nicos: YAP's version of PL_get_arg/3 does not fail when arity < index
 static int
 REAL_PL_get_arg(int i, term_t cols, term_t cell)
-{  int     arity;
+{  size_t  arity;
    term_t  name;
 
   if ( !PL_get_name_arity(cols, &name, &arity) || arity <=0 || arity < i   )
@@ -883,7 +883,8 @@ put_sexp(term_t t, SEXP s)
       if (!PL_cons_list(tail, head, tail) )
          return FALSE;
     }
-    PL_put_term(t, tail);
+    if ( !PL_put_term(t, tail) )
+      return FALSE;
     break;
   }
   case INTSXP:
@@ -903,7 +904,8 @@ put_sexp(term_t t, SEXP s)
     if (!PL_cons_list(tail, head, tail))
       return FALSE;
     }
-    PL_put_term(t, tail);
+    if ( !PL_put_term(t, tail) )
+      return FALSE;
     break;
   }
   case LGLSXP:
@@ -917,7 +919,8 @@ put_sexp(term_t t, SEXP s)
      !PL_cons_list(tail, head, tail) )
         return FALSE;
     }
-    PL_put_term(t, tail);
+    if ( !PL_put_term(t, tail) )
+      return FALSE;
     break;
   }
         case VECSXP:
@@ -948,7 +951,8 @@ put_sexp(term_t t, SEXP s)
      !PL_cons_list(tail, head, tail) )
         return FALSE;
     }
-    PL_put_term(t, tail);
+    if ( !PL_put_term(t, tail) )
+      return FALSE;
     break;
   }
         case STRSXP:
@@ -963,7 +967,8 @@ put_sexp(term_t t, SEXP s)
      !PL_cons_list(tail, head, tail) )
         return FALSE;
     }
-    PL_put_term(t, tail);
+    if ( !PL_put_term(t, tail) )
+      return FALSE;
     break;
   }
         default:
@@ -1027,7 +1032,8 @@ put_sexp(term_t t, SEXP s)
     return FALSE;
       }
 
-      PL_put_term(t, tail);
+      if ( !PL_put_term(t, tail) )
+	return FALSE;
       break;
     }
     default:
@@ -1134,13 +1140,13 @@ send_r_command(term_t cmd)
 static foreign_t
 send_c_vector(term_t tvec, term_t tout)
 { char *s;
-  int arity, i;
+  size_t arity, i;
   atom_t name;
   term_t targ = PL_new_term_ref();
   SEXP rho =  R_GlobalEnv, ans;
 
   if ( !PL_get_name_arity(tvec, &name, &arity) ||
-       arity <= 0) {
+       arity == 0) {
     return FALSE;
   }
   if ( !PL_get_atom_chars(tout, &s) ) {

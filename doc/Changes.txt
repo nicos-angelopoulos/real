@@ -13,6 +13,9 @@ Todo:
 		--- interactions <- sapply(1:ncol(genomic_data), function(i) sapply(1:ncol(genomic_data), function(j) {f<- try(fisher.test(genomic_data[,i], genomic_data[,j]), silent=TRUE); if(class(f)=="try-error") 0 else ifelse(f$estimate>1, -log10(f$p.val),log10(f$p.val))} ))
 
 2:2
+     2022/01/17    patches for src/real.c from Jan Wielemaker: The type warnings will cause issues on some platforms (read: crash).
+                   - Lacking the return value check for PL_put_term() can also cause a crash if this runs out of stack.
+     2022/01/17    Fixed, -.. -> --dump-runtime-variables 
      2020/09/05    explicit loading of library(apply)
 
 2:1       @ 20.05.29
