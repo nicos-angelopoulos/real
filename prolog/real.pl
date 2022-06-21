@@ -344,7 +344,7 @@ logical :-
 
 @author     Nicos Angelopoulos
 @author     Vitor Santos Costa
-@version    2:2:0, 2020/5/29, new_bins
+@version    2:2:0, 2022/6/21, new_bins
 @license    MIT
 @see        http://stoics.org.uk/~nicos/sware/real
 @see        ?- pack(real/examples/for_real), for_real
@@ -1010,17 +1010,24 @@ r_library_codes( Rlib, Pre, Post, Rcodes ) :-
 % Version and release Date (data(Y,M,D) term). Note is either a note or nickname
 % for the release. In git development sources this is set to <Something>_dev.
 %
+%==
+% ?- r_version( V, D, N ).
+% V = 2:2:0,
+% D = date(2022, 6, 21),
+% N = new_bins.
+%==
+%
+%@version 2:1:0, 2020/5/29, swi8_2
+%@version 2:0:0, 2016/9/5, ijar
+%@version 1:5:0, 2016/1/23, j_review
+%@version 1:4:0, 2015/5/24, configurable
+%@version 1:3:0, 2015/5/3,  collaborative
+%@version 1:2:0, 2015/1/2,  regardless
+%@version 1:1:0, 2013/3/24, thankless_task
+%@version 1:0:0, 2013/12/6, sinter_class
+%@version 0:1:2, 2013/11/3, the_stoic
+%@version 0:1:0, 2012/12/26,oliebollen
 r_version( 2:2:0, date(2022,6,21), new_bins ).
-     % 2:1:0, 2020/5/29, swi8_2
-     % 2:0:0, 2016/9/5, ijar
-     % 1:5:0, 2016/1/23, j_review
-     % 1:4:0, 2015/5/24, configurable
-	% 1:3:0, 2015/5/3,  collaborative
-     % 1:2:0, 2015/1/2,  regardless
-     % 1:1:0, 2013/3/24, thankless_task
-     % 1:0:0, 2013/12/6, sinter_class
-     % 0:1:2, 2013/11/3, the_stoic
-     % 0:1:0, 2012/12/26,oliebollen
 
 %% r_citation( -Atom, -Bibterm ).
 %
@@ -1078,15 +1085,24 @@ r_call_defaults( Defs ) :-
 % The predicate also supports multiple output destinations.
 %
 % Opts a single or list of the following:
-% * Ropt=Rarg            =/2 terms in Opts are added to the function call
-% * call(Call=true)      whether to call the constructed function
-% * debug(Dbg=false)     turn on debug(real) and restore at end of call
-% * fcall(Fcall)         returns the constructed Fcall
-% * outputs(Outs=false)  a single or list of [false,x11,pdf] also terms of those (eg x11(width=7))
-% * post_call(Post)      call this after the function call. this can be an arbitrary callable including another <-/2 or r_call/2
-% * rmv(Rmv=false)       when Rvar is given, should it be removed from R workspace at end? (see r_remove/1)
-% * rvar(Rvar)           when given call is expanded to Rvar <- Fcall, else <- Fcall is called
-% * stem(Stem=real_plot) stem to use for output files
+%  * Ropt=Rarg
+%     =/2 terms in Opts are added to the function call
+%  * call(Call=true)      
+%     whether to call the constructed function
+%  * debug(Dbg=false)
+%     turn on debug(real) and restore at end of call
+%  * fcall(Fcall)
+%     returns the constructed Fcall
+%  * outputs(Outs=false)
+%     a single or list of [false,x11,pdf] also terms of those (eg x11(width=7))
+%  * post_call(Post)
+%     call this after the function call. this can be an arbitrary callable including another <-/2 or r_call/2
+%  * rmv(Rmv=false)
+%     when Rvar is given, should it be removed from R workspace at end? (see r_remove/1)
+%  * rvar(Rvar)
+%     when given call is expanded to Rvar <- Fcall, else <- Fcall is called
+%  * stem(Stem=real_plot)
+%     stem to use for output files
 %
 % Only the first Ropt=Rarg for each matching Ropt is used. This is also the case
 % for =pairs in args of Func. These are pre-pended for the check, so they always have
