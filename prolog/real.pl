@@ -344,7 +344,7 @@ logical :-
 
 @author     Nicos Angelopoulos
 @author     Vitor Santos Costa
-@version    2:1:0, 2020/5/29, swi8_2
+@version    2:2:0, 2020/5/29, new_bins
 @license    MIT
 @see        http://stoics.org.uk/~nicos/sware/real
 @see        ?- pack(real/examples/for_real), for_real
