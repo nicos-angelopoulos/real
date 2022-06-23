@@ -344,7 +344,7 @@ logical :-
 
 @author     Nicos Angelopoulos
 @author     Vitor Santos Costa
-@version    2:2:0, 2022/6/21, new_bins
+@version    2:3:0, 2022/6/23, rotten_bins
 @license    MIT
 @see        http://stoics.org.uk/~nicos/sware/real
 @see        ?- pack(real/examples/for_real), for_real
@@ -1012,11 +1012,12 @@ r_library_codes( Rlib, Pre, Post, Rcodes ) :-
 %
 %==
 % ?- r_version( V, D, N ).
-% V = 2:2:0,
-% D = date(2022, 6, 21),
-% N = new_bins.
+% V = 2:3:0,
+% D = date(2022, 6, 23),
+% N = rotten_bins.
 %==
 %
+%@version 2:2:0, 2022/6/21, new_bins
 %@version 2:1:0, 2020/5/29, swi8_2
 %@version 2:0:0, 2016/9/5, ijar
 %@version 1:5:0, 2016/1/23, j_review
@@ -1027,11 +1028,11 @@ r_library_codes( Rlib, Pre, Post, Rcodes ) :-
 %@version 1:0:0, 2013/12/6, sinter_class
 %@version 0:1:2, 2013/11/3, the_stoic
 %@version 0:1:0, 2012/12/26,oliebollen
-r_version( 2:2:0, date(2022,6,21), new_bins ).
+r_version( 2:3:0, date(2022,6,23), rotten_bins ).
 
 %% r_citation( -Atom, -Bibterm ).
 %
-% Although the original name was R..eal, when citating please use Real as the name for this library.
+% Although the original name was R..eal, when citing please use Real as the name for this library.
 %
 % This predicate succeeds once for each publication related to this library.
 % Atom is the atom representation % suitable for printing while Bibterm 
