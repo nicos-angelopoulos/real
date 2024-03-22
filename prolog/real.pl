@@ -1017,6 +1017,7 @@ r_library_codes( Rlib, Pre, Post, Rcodes ) :-
 % N = rotten_bins.
 %==
 %
+%@version 2:4:0  (edit 24.03.22) added (A,B) and <-/1,2 goals in r_call/2
 %@version 2:2:0, 2022/6/21, new_bins
 %@version 2:1:0, 2020/5/29, swi8_2
 %@version 2:0:0, 2016/9/5, ijar
@@ -1115,24 +1116,45 @@ r_call_defaults( Defs ) :-
 % ?- <- plot(c(1,2,3)) ++ xlab=+an_xlab
 %==
 %
+% As of 2:3:0
+%==
+% ?- r_call( (plot([1,2,3]),plot([4,5,8])), [debug(true)]  ).
+% 
+% ?- r_call( <- plot([3,2,1]), true ).
+%==
+%
 r_call( FPre, ArgS ) :-
      to_list( ArgS, Args ),
      ( memberchk(debug(true),Args) -> debug(real); true ), % fixme: turn-off again
-     FPre =.. [Fun|FPreList], % fixme: ? test plot, plot() & plot(c(1,2,3))
      r_call_defaults( Defs ),
+     append( Args, Defs, Opts ),
+     r_call_goal( FPre, Args, FCall ),
+     memberchk( fcall(FCall), Opts ),
+     memberchk( call(CallBool), Opts ),
+     call_r_function( CallBool, FCall, Opts ).
+
+r_call_goal( (A,B), Args, Fcall ) :-
+     !,
+     r_call_goal( A, Args, Acall ),
+     r_call_goal( B, Args, Bcall ),
+     Fcall = (Acall,Bcall).
+
+r_call_goal( FPre, Args, RCall ) :-
+     FPre =.. [Fun|FPreList], % fixme: ? test plot, plot() & plot(c(1,2,3))
      partition( eq_pair, FPreList, FPreEqPairs, FPreRArgs ),
-     flatten( [FPreEqPairs,Args,Defs], Opts ),
+     flatten( [FPreEqPairs,Args], Opts ),
      options_equals_pairs( Opts, Rpairs ),
      append( FPreRArgs, Rpairs, FArgs ),
      compound( FCall, Fun, FArgs ), % SWI-7 specific if FList is []
-     memberchk( fcall(FCall), Opts ),
-     ( memberchk(rvar(Rvar),Opts) ->
-	Callable = (Rvar <- FCall)
-	;
-	Callable = (<- FCall)
-     ),
-     memberchk( call(CallBool), Opts ),
-     call_r_function( CallBool, Callable, Opts ).
+     ( (FCall = (_ <- _); FCall = (<- _)) ->
+                    RCall = FCall
+                    ;
+                    ( memberchk(rvar(Rvar),Args) ->
+                         RCall = (Rvar <- FCall)
+                         ;
+                         RCall = (<- FCall)
+                    )
+     ).
 
 %%% end of interface predicates
 
@@ -1197,7 +1219,7 @@ r_call_output( Call, Stem, Opts, Out ) :-
 	;
 	<- OutCall
      ),
-     debug( real, 'R call: ~w', (<- Call) ),
+     debug( real, 'R call: ~w', [Call] ),
      call( Call ),
      ( memberchk(post_call(Post),Opts) ->
 	debug( real, 'Post call: ~w', [Post] ),
