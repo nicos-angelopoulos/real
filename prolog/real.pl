@@ -1228,10 +1228,9 @@ r_call_output( Call, Stem, Opts, Out ) :-
      debug( real, 'R call: ~w', [Call] ),
      call( Call ),
      ( memberchk(post_call(Post),Opts) ->
-	debug( real, 'Post call: ~w', [Post] ),
 	call( Post )
 	;
-	debug( real, 'No post call in: ~w', [Opts] )
+	true
      ),
      r_call_ouput_dev_off( Ofun ).
 
