@@ -1078,7 +1078,7 @@ r_remove( Plvar ) :-
      <- remove( Plvar ).
 
 r_call_defaults( Defs ) :-
-     Defs = [ call(true), fcall(_), outputs(false), stem(real_plot) ].
+     Defs = [call(true), dir('.'), fcall(_), outputs(false), stem(real_plot)].
 
 %% r_call( +Fun, +Opts ).
 %
@@ -1091,6 +1091,8 @@ r_call_defaults( Defs ) :-
 %     =/2 terms in Opts are added to the function call
 %  * call(Call=true)      
 %     whether to call the constructed function
+%  * dir(Dir='.')
+%    directory for any file outputs
 %  * debug(Dbg=false)
 %     turn on debug(real) and restore at end of call
 %  * fcall(Fcall)
@@ -1121,6 +1123,8 @@ r_call_defaults( Defs ) :-
 % ?- r_call( (plot([1,2,3]),plot([4,5,8])), [debug(true)]  ).
 % 
 % ?- r_call( <- plot([3,2,1]), true ).
+% 
+% ?- r_call( <- plot([3,2,1]), [outputs(svg),dir(plots),debug(true)] )
 %==
 %
 r_call( FPre, ArgS ) :-
@@ -1200,7 +1204,9 @@ call_r_function( _True, Callable, Opts ) :-
      memberchk( outputs(OutS), Opts ),
      to_list( OutS, Outs ),
      memberchk( stem(Stem), Opts ),
-     maplist( r_call_output(Callable,Stem,Opts), Outs ).
+     memberchk( dir(Dir), Opts ),
+     directory_file_path( Dir, Stem, Dtem ),
+     maplist( r_call_output(Callable,Dtem,Opts), Outs ).
 
 r_call_output( Call, Stem, Opts, Out ) :-
      arity( Out, Ofun, _ ),
