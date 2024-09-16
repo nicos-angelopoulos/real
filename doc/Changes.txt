@@ -13,6 +13,7 @@ Todo:
 		--- interactions <- sapply(1:ncol(genomic_data), function(i) sapply(1:ncol(genomic_data), function(j) {f<- try(fisher.test(genomic_data[,i], genomic_data[,j]), silent=TRUE); if(class(f)=="try-error") 0 else ifelse(f$estimate>1, -log10(f$p.val),log10(f$p.val))} ))
 
 2:4  
+     24.09.16      DEPS:   added dependecy to library(filesex)
      24.03.23      OPTS:   added dir(Dir) in r_call/2, with doc example
      24.03.22      IFACE:  added (A,B) and <-/1,2 goals in r_call/2
 2:3  @ 22.06.23

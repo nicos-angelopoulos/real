@@ -83,6 +83,7 @@
 :- use_module(library(apply_macros)).
 :- use_module(library(charsio)).
 :- use_module(library(readutil)).
+:- use_module(library(filesex)).
 :- use_module(library(debug)).
 
 /** <module> An interface to the R statistical software.
