@@ -270,7 +270,8 @@ char_vector_sexp(term_t t, size_t len, SEXP *ansP)
 
     restart:
     if ( PL_get_chars(head, &s, CVT_ATOM|CVT_STRING|CVT_EXCEPTION|BUF_DISCARDABLE|REP_UTF8) )
-      { CHARACTER_DATA(ans)[index] = mkCharCE(s, CE_UTF8);
+      //del.me { CHARACTER_DATA(ans)[index] = mkCharCE(s, CE_UTF8);
+      { SET_VECTOR_ELT(ans, index, mkString(s)); 
     } else if (PL_is_functor(head,FUNCTOR_plus1))
       { if ( !PL_get_arg(1, head, head) )
     return PL_type_error("R-term (in char vect, 2)", head);
@@ -287,12 +288,16 @@ char_vector_sexp(term_t t, size_t len, SEXP *ansP)
             return PL_type_error("R-term (char vect, 3)", head);
 
       if (a == ATOM_true)
-       CHARACTER_DATA(ans)[index] = mkChar("true");
+       // CHARACTER_DATA(ans)[index] = mkChar("true");
+      SET_VECTOR_ELT(ans, index, mkString("true")); 
+
         else
           if (a == ATOM_false)
-           CHARACTER_DATA(ans)[index] = mkChar("false");
+           // CHARACTER_DATA(ans)[index] = mkChar("false");
+           SET_VECTOR_ELT(ans, index, mkString("false")); 
           else
-            CHARACTER_DATA(ans)[index] = mkCharCE(s, CE_LATIN1);
+            // CHARACTER_DATA(ans)[index] = mkCharCE(s, CE_LATIN1);
+            SET_VECTOR_ELT(ans,index,mkString(s));
                  // could also use this :
                  // return PL_type_error("@atom", t );
     } else
@@ -594,7 +599,8 @@ matrix_sexp(term_t t, term_t head, size_t len, int itype, SEXP *ansP)
                 if ( PL_get_chars(cell, &s,
              CVT_ATOM|CVT_STRING|CVT_EXCEPTION|BUF_DISCARDABLE|REP_UTF8) )
                  {
-                    CHARACTER_DATA(ans)[index] = mkCharCE(s, CE_UTF8);
+                    // CHARACTER_DATA(ans)[index] = mkCharCE(s, CE_UTF8);
+                    SET_VECTOR_ELT(ans, index, mkString(s));
                  } else
                  { /* FIXME: deallocate work */
                      if ( PL_is_functor(cell, FUNCTOR_boolop1) )
@@ -605,10 +611,12 @@ matrix_sexp(term_t t, term_t head, size_t len, int itype, SEXP *ansP)
                              if ( ! PL_get_atom(arg1,&a) )
                                 return PL_type_error("R-term (in type, 3)", cell);
                              if (a == ATOM_true)
-                                CHARACTER_DATA(ans)[index] = mkChar("true");
+                                // CHARACTER_DATA(ans)[index] = mkChar("true");
+                                SET_VECTOR_ELT(ans, index, mkString("true"));
                              else
                                  if (a == ATOM_false)
-                                     CHARACTER_DATA(ans)[index] = mkChar("false");
+                                     // CHARACTER_DATA(ans)[index] = mkChar("false");
+                                     SET_VECTOR_ELT(ans, index, mkString("false"));
                                  else
                            return PL_type_error("atom or codes", cell);
 
@@ -664,7 +672,8 @@ pl_sexp(term_t t, SEXP *ansP)
       if ( PL_get_chars(t, &s, CVT_ATOM|CVT_STRING|CVT_EXCEPTION|BUF_DISCARDABLE|REP_UTF8) )
       { PROTECT(ans = NEW_CHARACTER(1));
        nprotect++;
-       CHARACTER_DATA(ans)[0] = mkCharCE(s, CE_UTF8);
+       // CHARACTER_DATA(ans)[0] = mkCharCE(s, CE_UTF8);
+       SET_VECTOR_ELT(ans, 0, mkString(s)); 
       }
       break;
     }
@@ -1249,24 +1258,24 @@ rexpr_to_pl_term(term_t in, term_t out)
   return FALSE;
 }
 
-
 static foreign_t
 robj_to_pl_term(term_t name, term_t out)
 { char *plname;
 
   if ( PL_get_chars(name, &plname, CVT_ALL|CVT_EXCEPTION|BUF_DISCARDABLE|REP_UTF8) )
   { SEXP s;
-    int nprotect = 0;
     term_t tmp = PL_new_term_ref();
     int rc;
 
-    PROTECT( s= findVar(install(plname), R_GlobalEnv) );
-    nprotect ++;
-    if (TYPEOF(s)==SYMSXP)
+    PROTECT( s= R_getVarEx(install(plname), R_GlobalEnv, TRUE, R_UnboundValue) );
+
+    if (s == R_UnboundValue) {
+      UNPROTECT(1);
       return PL_existence_error("r_variable", name);
+    }
 
     rc = put_sexp(tmp, s);
-    UNPROTECT(nprotect);
+    UNPROTECT(1);
 
     if ( rc )
       return PL_unify(out, tmp);
@@ -1294,26 +1303,23 @@ set_r_variable(term_t rvar, term_t value)
 }
 
 static foreign_t
-is_r_variable(term_t t)
+is_r_variable(term_t pl)
 {
   SEXP name,o;
-  char *s;
+  char *rv;
 
   /* is this variable defined in R?.  */
-  if ( PL_get_chars(t, &s, CVT_ATOM|CVT_STRING|CVT_EXCEPTION|BUF_DISCARDABLE|REP_UTF8) )
-    { PROTECT(name = NEW_CHARACTER(1));
-      CHARACTER_DATA(name)[0] = mkCharCE(s, CE_UTF8);
+  if ( PL_get_chars(pl, &rv, CVT_ATOM|CVT_STRING|CVT_EXCEPTION|BUF_DISCARDABLE|REP_UTF8) )
+    {
+      PROTECT( o = R_getVarEx(install(rv), R_GlobalEnv, TRUE, R_UnboundValue) );
+      UNPROTECT(1);
+      return o != R_UnboundValue;
     }
   else {
     UNPROTECT(1);
     return FALSE;
   }
-
-  PROTECT(o = findVar(install(CHAR(STRING_ELT(name, 0))), R_GlobalEnv));
-  UNPROTECT(2);
-  return o != R_UnboundValue;
 }
-
 
 		 /*******************************
 		 *         REDIRECT I/O		*
