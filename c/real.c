@@ -259,19 +259,17 @@ char_vector_sexp(term_t t, size_t len, SEXP *ansP)
 { term_t tail = PL_copy_term_ref(t);
   term_t head = PL_new_term_ref();
   size_t index;
-  SEXP ans;
   int nprotect = 0;
 
-  PROTECT(ans=NEW_CHARACTER(len));
+  SEXP ans = PROTECT(allocVector(STRSXP, len));  // see: http://adv-r.had.co.nz/C-interface.html: Character vectors and lists
   nprotect++;
 
   for(index=0; PL_get_list(tail, head, tail); index++)
     { char *s;
-
+    
     restart:
     if ( PL_get_chars(head, &s, CVT_ATOM|CVT_STRING|CVT_EXCEPTION|BUF_DISCARDABLE|REP_UTF8) )
-      //del.me { CHARACTER_DATA(ans)[index] = mkCharCE(s, CE_UTF8);
-      { SET_VECTOR_ELT(ans, index, mkString(s)); 
+      { SET_STRING_ELT(ans, index, (mkChar(s))); 
     } else if (PL_is_functor(head,FUNCTOR_plus1))
       { if ( !PL_get_arg(1, head, head) )
     return PL_type_error("R-term (in char vect, 2)", head);
